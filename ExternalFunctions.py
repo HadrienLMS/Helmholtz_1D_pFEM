@@ -81,12 +81,11 @@ def MassAndStiffness_1D(iElem, Order, Coord, Element):
   return Ke, Me
 
 
-def GetSolutionOnSubgrid(Sol, Order, Coord, Element, NrOfElem, DofElement):
+def GetSolutionOnSubgrid(Sol, Order, Coord, Element, NrOfElem, DofElement, NrOfWavesOnDomain):
   # create a finer subgrid to interpolate the numerical solution
   import numpy as np
-  # use a sampling of Order * 10 to make sure subgrid is fine enough  
-  # in 1D one can afford it
-  NrOfSubgridPoints = Order*10
+  # use a sampling of 20 points per wavelength for plotting
+  NrOfSubgridPoints = np.ceil(NrOfWavesOnDomain*20).astype(int)
   #
   xi = np.linspace(-1., 1., NrOfSubgridPoints)
   L = Lobatto(xi, Order)
@@ -114,6 +113,7 @@ def GetSolutionOnSubgrid(Sol, Order, Coord, Element, NrOfElem, DofElement):
 def ComputeFullSolution(DuctLength,NrOfElem,Order,omega,rho0,c0,Vn,beta):
   # performs the numerical simulation for these inputs
   import numpy as np
+  import math
   
   # first create the mesh and the Dofs list
   NrOfNodes, Coord, Element = Mesh1D(DuctLength,NrOfElem)
@@ -138,7 +138,8 @@ def ComputeFullSolution(DuctLength,NrOfElem,Order,omega,rho0,c0,Vn,beta):
   Sol = np.linalg.solve(Matrix, Rhs) 
   
   # compute solution on subgrid
-  x_sub, u_h_sub = GetSolutionOnSubgrid(Sol, Order, Coord, Element, NrOfElem, DofElement)
+  Lambda = 2*math.pi/(omega/c0); NrOfWavesOnDomain = DuctLength/Lambda
+  x_sub, u_h_sub = GetSolutionOnSubgrid(Sol, Order, Coord, Element, NrOfElem, DofElement, NrOfWavesOnDomain)
   
   # exact solution on subgrid 
   u_exact_sub = np.exp(-1j*omega/c0*x_sub)
